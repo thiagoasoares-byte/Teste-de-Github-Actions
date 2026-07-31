@@ -1,0 +1,36 @@
+name: CI para FastAPI
+
+# Configuração do Workflow: Acionado em push na branch main
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    # Configuração do Job: Runner Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout do Código
+      - name: Checkout do repositório
+        uses: actions/checkout@v3
+
+      # 2. Instalar o Poetry (Dica: instalamos antes do Python para o cache nativo funcionar)
+      - name: Instalar o Poetry
+        run: pipx install poetry
+
+      # 3. Configurar Python 3.9 e Cache
+      - name: Configurar o Python 3.9
+        uses: actions/setup-python@v4 # Atualizado para v4 para melhor suporte a cache
+        with:
+          python-version: '3.9'
+          cache: 'poetry' # Dica aplicada: Otimiza as dependências usando cache do Poetry
+
+      # 4. Instalar Dependências
+      - name: Instalar Dependências do Projeto
+        run: poetry install --no-root --no-interaction
+
+      # 5. Rodar Testes
+      - name: Executar Testes com Pytest
+        run: poetry run pytest
