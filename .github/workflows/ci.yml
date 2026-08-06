@@ -1,0 +1,35 @@
+name: CI para FastAPI
+on:
+  push:
+    branches:
+      - main
+env:
+  IMAGE_NAME: fastapi-app
+  IMAGE_TAG: latest
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v3
+      - name: Instalar o Poetry
+        run: pipx install poetry
+      - name: Configurar o Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'poetry'
+      - name: Instalar Dependências do Projeto
+        run: poetry install --no-root --no-interaction
+      - name: Executar Testes com Pytest
+        run: poetry run pytest
+      - name: Construir imagem Docker
+        run: docker build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
+      - name: Rodar container para verificação
+        run: |
+          docker run -d --name ${{ env.IMAGE_NAME }}-test -p 8000:8000 ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          sleep 5
+          curl --fail http://localhost:8000/health
+      - name: Encerrar container de teste
+        if: always()
+        run: docker stop ${{ env.IMAGE_NAME }}-test && docker rm ${{ env.IMAGE_NAME }}-test
